@@ -8,7 +8,7 @@
 #include <limits.h>
 #include "../Helper/ErrorReport.h"
 #include "RuleTokenize.h"
-#include "RulesParser.h"
+#include "RulesFileParser.h"
 #include "RegularExpTokens.h"
 
 #include "DefinitionsHandler.h"
@@ -20,54 +20,39 @@
 
 using namespace std;
 
-bool RulesParser::setFile(string fileName){
+bool RulesFileParser::setFile(string fileName){
 	
 	//try to open the file
-	RulesFile  = fopen(fileName.c_str(),"r");
-	fileEnd = false;
+	bool succ = ruleFileReader.setFile(fileName));
 
 	//if failed, set the error message and return false
-	if(RulesFile == NULL){
-		error.setError("Can't open the Rules file for reading.");
+	if(!succ){
+		error.setError(ruleFileReader.getError());
 		return false;
 	}
 
 	return true;
 }
 
-string RulesParser::getError(){
+string RulesFileParser::getError(){
 	return error.getError();
 }
 
-string RulesParser::readNextLine(FILE* file){
 
-	string line;
-	char c;
-    
-    // iteratively get characters from standard input, checking for CR (Mac OS), LF (Linux), and CRLF (Windows)
-    while ((c = fgetc(file)) != '\r' && c != '\n' && c != EOF){
-    	line += c;
-    }
+bool RulesFileParser::parseRules(){
 
-    if(c == EOF){
-    	fileEnd = true;
-    }
-
-    return line;
-}
-
-
-bool RulesParser::parseRules(){
-
+	// This is increasing counter for every rule.
+	// This counter will be used to set priority for each line, priority is bigger
+	//at the top and decrease downward. So priority will be (INT_MAX/counter).
 	int counter = 5;
 
-	while(!fileEnd){
+	while(!ruleFileReader.isEnd()){
 
 		//read next line in the file
-		string line = readNextLine(RulesFile);
+		string line = ruleFileReader.getNextLine();
 
 		//divide the string into several token using hardcoded lexical specifications
-		vector<RuleToken*> tokens = tokenizer.tokenize(line);
+		vector<StringToken*> tokens = tokenizer.tokenize(line);
 
 		//check error during the tokenizer
 		if(tokenizer.isError()){
@@ -123,6 +108,6 @@ bool RulesParser::parseRules(){
 
 }
 
-vector<RegularExpression> RulesParser::getParsedExpressions(){
+vector<RegularExpression> RulesFileParser::getParsedExpressions(){
 	return AllExps;
 }

@@ -43,11 +43,11 @@ void RegularTransition::mergeTransition(RegularTransition trans){
 
 void RegularTransition::addTransition(char x){
 	//if char already existed, return
-	if(unique.test(x)){
+	if(ASCIIset.test(x)){
 		return;
 	}
 	//else add it to the vector & bitset
-	unique.set(x);
+	ASCIIset.set(x);
 	transitions.push_back(x);
 }
 
@@ -55,8 +55,8 @@ vector<char> RegularTransition::getAvailableTransitions(){
 	return transitions;
 }
 
-string RegularTransition::getType(){
-	return "Def";
+int RegularTransition::getType(){
+	return REGULAR_TRANSITION_TYPE;
 }
 
 RegularTransition* RegularTransition::clone(){
@@ -87,13 +87,8 @@ RegularSymbols::RegularSymbols(char sym){
 			symbol = sym;
 			break;
 		default:
-			cout << "ERROR ERROR ERROR in REGULAR SYMBOL" << endl;
-			cout << sym << endl;
-			cout << sym << endl;
-			cout << sym << endl;
+			symbol = 0;
 			break;
-			//TODO
-			//Error message
 	}
 }
 
@@ -106,6 +101,6 @@ char RegularSymbols::getSymbol(){
 	return symbol;
 }
 
-string RegularSymbols::getType(){
-	return "Sym";
+int RegularSymbols::getType(){
+	return REGULAR_SYMBOL_TYPE;
 }

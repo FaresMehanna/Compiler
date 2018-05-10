@@ -5,6 +5,11 @@
 #include "ErrorReport.h"
 #include "FileReader.h"
 
+/*
+ * Class Name : FileParser
+ *
+ * This interface for any class that will handle file like RulesFile or ProductionFile.
+ */
 class FileParser{
 	
 	protected:
