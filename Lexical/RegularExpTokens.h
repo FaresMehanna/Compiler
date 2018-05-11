@@ -10,12 +10,12 @@
 #define REGULAR_SYMBOL_TYPE		 	1
 
 /*
- * Class Name : RegularExpressionTokens
+ * Class Name : RegularExpressionToken
  *
  * This interface will be implemented by any object can exist in reqular expression.
  * Currently only a Symbol and a Transition can exist in reqular expression.
  */
-class RegularExpressionTokens{
+class RegularExpressionToken{
 
 	public:
 		
@@ -23,7 +23,7 @@ class RegularExpressionTokens{
 		virtual int getType() = 0;
 
 		// clone the Token by deep-copying the object.
-		virtual RegularExpressionTokens* clone() = 0;
+		virtual RegularExpressionToken* clone() = 0;
 };
 
 
@@ -33,7 +33,7 @@ class RegularExpressionTokens{
  * This represent a char or more in the reqular expression.
  * This called Transition as this will be a transition in the NFA.
  */
-class RegularTransition : public RegularExpressionTokens{
+class RegularTransition : public RegularExpressionToken{
 	
 	private:
 
@@ -86,12 +86,12 @@ class RegularTransition : public RegularExpressionTokens{
 
 
 /*
- * Class Name : RegularSymbols
+ * Class Name : RegularSymbol
  *
  * This represent a symbol in the reqular expression.
  * This symbol will represent an operation in the regular expression.
  */
-class RegularSymbols : public RegularExpressionTokens{
+class RegularSymbol : public RegularExpressionToken{
 
 	private:
 
@@ -102,14 +102,14 @@ class RegularSymbols : public RegularExpressionTokens{
 
 		// Setter and Getter of the object.
 		// If the symbol isn't recognized, getSymbol() will return 0 in ASCII.
-		RegularSymbols(char sym);
+		RegularSymbol(char sym);
 		char getSymbol();
 
 		// Return REGULAR_SYMBOL_TYPE
 		std::string getType() override;
 
 		// Clone the current object and return new one exactly behaved like this.
-		RegularSymbols* clone() override;
+		RegularSymbol* clone() override;
 };
 
 #endif

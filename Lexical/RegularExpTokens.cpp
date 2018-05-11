@@ -75,7 +75,7 @@ RegularTransition* RegularTransition::clone(){
 
 
 		
-RegularSymbols::RegularSymbols(char sym){
+RegularSymbol::RegularSymbol(char sym){
 	switch(sym){
 		case '|':
 		case '+':
@@ -92,15 +92,15 @@ RegularSymbols::RegularSymbols(char sym){
 	}
 }
 
-RegularSymbols* RegularSymbols::clone(){
-	return new RegularSymbols(this->getSymbol());
+RegularSymbol* RegularSymbol::clone(){
+	return new RegularSymbol(this->getSymbol());
 }
 
 
-char RegularSymbols::getSymbol(){
+char RegularSymbol::getSymbol(){
 	return symbol;
 }
 
-int RegularSymbols::getType(){
+int RegularSymbol::getType(){
 	return REGULAR_SYMBOL_TYPE;
 }

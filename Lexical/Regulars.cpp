@@ -3,49 +3,100 @@
 #include <stack>
 #include <unordered_map>
 #include <deque>
+
 #include "../Helper/ErrorReport.h"
-#include "RuleTokenize.h"
+#include "../Helper/StringTokenizer.h"
+
 #include "DefinitionsHandler.h"
 #include "RegularExpTokens.h"
 #include "Regulars.h"
 
 using namespace std;
 
-void Regular::addToken(RegularExpressionTokens* token){
-	this->exp.push_back(token);
+
+void RegularExpression::addToken(RegularExpressionToken* token){
+	expressionTokens.push_back(token);
 }
 
-vector<RegularExpressionTokens*> Regular::getDefinition(){
-	return this->exp;
+vector<RegularExpressionToken*> RegularExpression::getRegularExpression(){
+	return expressionTokens;
 }
 
+void RegularExpression::clean(){
 
+	//clean the vector and the name
+	expressionTokens.clean();
+	name = "";
 
-void Regular::setName(string name){
+}
+
+void RegularExpression::setName(string name){
 	this->name = name;
 }
-string Regular::getName(){
+string RegularExpression::getName(){
 	return name;
 }
 
 
-void Regular::setPriority(unsigned int pr){
+RuleFileProductionRegularExpression::RuleFileProductionRegularExpression(){
+	priority = 0;
+}
+
+
+void RuleFileProductionRegularExpression::setPriority(unsigned int pr){
 	priority = pr;
 }
 
-unsigned int Regular::getPriority(){
+unsigned int RuleFileProductionRegularExpression::getPriority(){
 	return priority;
 }
 
+unsigned int RuleFileProductionRegularExpression::getPriority(){
+	RegularExpression::clean();
+	priority = 0;
+}
 
+RuleFileProductionRegularExpression::RuleFileProductionRegularExpression(const RegularExpression& lhs){
+	
+	// Priority
+	priority = 0;
+
+	// Tokens Pointers
+	for(const auto& singleToken : lhs.getRegularExpression()){
+		addToken(singleToken);
+	}
+
+	// Name
+	setName(lhs.getName());
+}
+
+RuleFileProductionRegularExpression::RuleFileProductionRegularExpression& operator= (const RegularExpression& lhs){
+	
+	// Clean all the data
+	clean();
+
+	// Priority
+	priority = 0;
+
+	// Tokens Pointers
+	for(const auto& singleToken : lhs.getRegularExpression()){
+		addToken(singleToken);
+	}
+
+	// Name
+	setName(lhs.getName());
+
+	//return the object
+	return *this;
+}
 
 	/*
 	  first stage
 	  create expression with symbols or transitions only
 	 */
-bool RegularGenerator::firstPhase(){
+bool RegularExpressionGenerator::firstPhase(){
 
-	RegularSymbols* concSymbol = new RegularSymbols('!');
+	RegularSymbol* concSymbol = new RegularSymbol('!');
 	int conc = 0;
 
 	for(int i=2;i<lineTokens.size();i++){
@@ -54,29 +105,30 @@ bool RegularGenerator::firstPhase(){
 
 		switch(lineTokens[i]->getType()){
 
-			case RULE_TOKEN_LETTERS:
+			case STRING_TOKEN_LETTERS:
+
 				//concate symbol
 				if(conc > 0){
 					defintnion.addToken(concSymbol->clone());
 				}
-				conc++;
+				conc = 1;
+				
 				//check if it's a defintnion, use it
 				if(definitions.find(currToken) != definitions.end()){
 					
-					Regular old = definitions[currToken];
+					RegularExpression old = definitions[currToken];
 
-					RegularSymbols* open = new RegularSymbols('(');
-					RegularSymbols* close = new RegularSymbols(')');
+					RegularSymbol* open = new RegularSymbol('(');
+					RegularSymbol* close = new RegularSymbol(')');
 
 					defintnion.addToken(open);
-					for(RegularExpressionTokens* tok : old.getDefinition()){
+					for(RegularExpressionToken* tok : old.getRegularExpression()){
 						defintnion.addToken(tok->clone());
 					}
 					defintnion.addToken(close);
 				//create several transition with each char
 				}else{
 					for(int i=0;i<currToken.length();i++){
-						conc = 1;
 						//add concate
 						if(i != 0){
 							defintnion.addToken(concSymbol->clone());
@@ -92,53 +144,46 @@ bool RegularGenerator::firstPhase(){
 			break;
 			
 
-			case RULE_TOKEN_DIGITS:
-			case RULE_TOKEN_SYMBOLS:
+			case STRING_TOKEN_DIGITS:
+			case STRING_TOKEN_ESCAPE:
+
 				//concate symbol
 				if(conc > 0){
 					defintnion.addToken(concSymbol->clone());
 				}
-				conc++;
-				//if single char, then create transition with single char
-				if(currToken.length() == 1){
+				conc = 1;
+
+				//lamda !!
+				if(currToken == "L" && lineTokens[i]->getType() == STRING_TOKEN_ESCAPE){
 					//create the transition object and add the single char transition
 					RegularTransition* singleChar = new RegularTransition();
-					singleChar->addTransition(currToken[0]);
-					singleChar->setTransitionName(string()+currToken[0]);
+					singleChar->allowEpsilon();
+					singleChar->setTransitionName("Epsilon&");
 					//add to the definiton
 					defintnion.addToken(singleChar);
-				//if multiple chars, then check if it's a definition or a concated string
+				//multiple digits or operators like >= ==
 				}else{
-					//lamda !!
-					if(currToken == "L="){
+					for(int i=0;i<currToken.length();i++){
+						//add concate
+						if(i != 0){
+							defintnion.addToken(concSymbol->clone());
+						}
 						//create the transition object and add the single char transition
 						RegularTransition* singleChar = new RegularTransition();
-						singleChar->allowEpsilon();
-						singleChar->setTransitionName("Epsilon&");
+						singleChar->setTransitionName(string()+currToken[i]);
+						singleChar->addTransition(currToken[i]);
 						//add to the definiton
 						defintnion.addToken(singleChar);
-					//multiple digits or operators like >= ==
-					}else{
-						for(int i=0;i<currToken.length();i++){
-							conc = 1;
-							//add concate
-							if(i != 0){
-								defintnion.addToken(concSymbol->clone());
-							}
-							//create the transition object and add the single char transition
-							RegularTransition* singleChar = new RegularTransition();
-							singleChar->setTransitionName(string()+currToken[i]);
-							singleChar->addTransition(currToken[i]);
-							//add to the definiton
-							defintnion.addToken(singleChar);
-						}
 					}
 				}
+
 			break;
 			
 			//this is single char, then add it
-			default:
-				RegularExpressionTokens* singleChar;
+			case STRING_TOKEN_SYMBOL:
+
+				RegularExpressionToken* singleChar;
+			
 				//check if it's supported symbol or not
 				switch(currToken[0]){
 					case '(':
@@ -153,22 +198,28 @@ bool RegularGenerator::firstPhase(){
 							defintnion.addToken(concSymbol->clone());
 							conc = 0;
 						}
-						//if it was | 
+
+						//if it was | or -
+						// this is binary operations so we can't put ! after them
 						if(currToken[0] == '|' || currToken[0] == '-'){
 							conc = 0;
 						}
 
-						singleChar = new RegularSymbols(currToken[0]);
+						singleChar = new RegularSymbol(currToken[0]);
+						
 						//add to the symbol
 						defintnion.addToken(singleChar);
+
 						break;
+
 					//another symbol will be needed
 					default:
 						//concate symbol
 						if(conc > 0){
 							defintnion.addToken(concSymbol->clone());
 						}
-						conc++;
+						conc = 1;
+
 						//create the transition object and add the single char transition
 						singleChar = new RegularTransition();
 						((RegularTransition*)singleChar)->addTransition(currToken[0]);
@@ -187,16 +238,16 @@ bool RegularGenerator::firstPhase(){
 	 second stage
 	 convert it to postfix
  	*/
-bool RegularGenerator::secondPhase(){
+bool RegularExpressionGenerator::secondPhase(){
 
 	//stack of Regular Symbols only
-	stack<RegularSymbols*> op;
+	stack<RegularSymbol*> op;
 
-	for(RegularExpressionTokens* tok : defintnion.getDefinition()){
+	for(RegularExpressionToken* tok : defintnion.getRegularExpression()){
 		
 		//if it's a symbol
-		if(tok->getType() == "Sym"){
-			char sym = ((RegularSymbols*)tok)->getSymbol();
+		if(tok->getType() == REGULAR_SYMBOL_TYPE){
+			char sym = ((RegularSymbol*)tok)->getSymbol();
 			switch(sym){
 				
 				case '+':
@@ -208,13 +259,13 @@ bool RegularGenerator::secondPhase(){
 				case '!':
 
 					if(op.empty()){
-						op.push((RegularSymbols*)tok);
+						op.push((RegularSymbol*)tok);
 						break;
 					}
 					while(!op.empty()){
 
 						//curr top element
-						RegularSymbols* top = op.top();
+						RegularSymbol* top = op.top();
 						
 						//if it's low then add the symbol
 						if(symbolPriority(sym) > symbolPriority(top->getSymbol())){
@@ -227,16 +278,16 @@ bool RegularGenerator::secondPhase(){
 					}
 					
 					//the insert it
-					op.push((RegularSymbols*)tok);
+					op.push((RegularSymbol*)tok);
 
 				break;
 
 				case '(':
-					op.push((RegularSymbols*)tok);
+					op.push((RegularSymbol*)tok);
 					break;
 				case ')':
 					
-					RegularSymbols* top = NULL;
+					RegularSymbol* top = NULL;
 					while(!op.empty()){
 						
 						top = op.top();
@@ -258,7 +309,7 @@ bool RegularGenerator::secondPhase(){
 					break;
 			}
 		//if it's a transition
-		}else if(tok->getType() == "Def"){
+		}else if(tok->getType() == REGULAR_TRANSITION_TYPE){
 			defintnionPostFix.addToken(tok);
 		}
 
@@ -267,7 +318,7 @@ bool RegularGenerator::secondPhase(){
 	//add the rest of symbols to the postfix expression
 	while(!op.empty()){
 		
-		RegularSymbols* top = op.top();
+		RegularSymbol* top = op.top();
 		op.pop();
 		
 		if(top->getSymbol() == '('){
@@ -286,15 +337,15 @@ bool RegularGenerator::secondPhase(){
 	 - solve "-" 
 	 - CAREFUL, In this stage some of prev objects will be deleted
 	 */
-bool RegularGenerator::thirdPhase(){
+bool RegularExpressionGenerator::thirdPhase(){
 
-	deque<RegularExpressionTokens*> evaluator;
+	deque<RegularExpressionToken*> evaluator;
 
-	for(RegularExpressionTokens* tok : defintnionPostFix.getDefinition()){
-		if(tok->getType() == "Sym"){
+	for(RegularExpressionToken* tok : defintnionPostFix.getRegularExpression()){
+		if(tok->getType() == REGULAR_SYMBOL_TYPE){
 			
 			//check for the wanted symbol
-			if(((RegularSymbols*)tok)->getSymbol() != '-'){
+			if(((RegularSymbol*)tok)->getSymbol() != '-'){
 				evaluator.push_front(tok);
 				continue;
 			}
@@ -309,14 +360,13 @@ bool RegularGenerator::thirdPhase(){
 			}
 
 			//get the first operators from the stack top
-			RegularExpressionTokens* op1 = evaluator.front();
+			RegularExpressionToken* op1 = evaluator.front();
 			evaluator.pop_front();
-			RegularExpressionTokens* op2 = evaluator.front();
+			RegularExpressionToken* op2 = evaluator.front();
 			evaluator.pop_front();
 
 			//check that both are transitions
-			if(op1->getType() != "Def" || op2->getType() != "Def"){
-				cout << "ERR2" << endl; 
+			if(op1->getType() != REGULAR_TRANSITION_TYPE || op2->getType() != REGULAR_TRANSITION_TYPE){
 				error.setError("Can't solve the \"-\" sign, Type2.");
 				return false;
 			}
@@ -327,9 +377,6 @@ bool RegularGenerator::thirdPhase(){
 
 			//check that they have chars -- not epsilon
 			if(T_op1->getAvailableTransitions().size() != 1 || T_op2->getAvailableTransitions().size() != 1){
-				cout << "ERR3" << endl; 
-				cout << T_op1->getAvailableTransitions().size() << endl; 
-				cout << T_op2->getAvailableTransitions().size() << endl; 
 				error.setError("Can't solve the \"-\" sign, Type3.");
 				return false;
 			}
@@ -363,7 +410,7 @@ bool RegularGenerator::thirdPhase(){
 	return true;
 }
 
-int RegularGenerator::symbolPriority(char symbol){
+int RegularExpressionGenerator::symbolPriority(char symbol){
 	switch(symbol){
 		case '+':
 			return 10;
@@ -380,103 +427,37 @@ int RegularGenerator::symbolPriority(char symbol){
 	}
 }
 
-RegularGenerator::RegularGenerator(vector<RuleToken*> lTokens, unordered_map<std::string,Regular>& defs, bool addToDefinitions) : definitions(defs){
+RegularExpressionGenerator::RegularExpressionGenerator(const vector<RuleToken*>& lTokens, unordered_map<std::string,Regular>& defs, bool isUserDefinedRegulars) : definitions(defs){
 	//set the data
 	this->lineTokens = lTokens;
-	this->definitions = defs;
-	this->addToDefinitions = addToDefinitions;
+	this->userDefinedRegulars = defs;
+	this->isUserDefinedRegulars = isUserDefinedRegulars;
 }
 
-bool RegularGenerator::generateRegular(){
+bool RegularExpressionGenerator::generateRegularExpression(){
 	
 	//call the three functions sequntially
 	bool tryToSolve = firstPhase() && secondPhase() && thirdPhase();
 
 	if(!tryToSolve){
-		cout << getError() << endl;
-		cout << getError() << endl;
-		cout << getError() << endl;
-		cout << getError() << endl;
+		return false;
 	}
 
-	if(tryToSolve && addToDefinitions){
+	if(isUserDefinedRegulars){
 		definitions[lineTokens[0]->getData()] = defintnion;
 	}
-
-	if(tryToSolve){}
-		//debugInfo();
 
 	return tryToSolve;
 }
 
-bool RegularGenerator::isError(){
+bool RegularExpressionGenerator::isError(){
 	return error.isError();
 }
 
-string RegularGenerator::getError(){
+string RegularExpressionGenerator::getError(){
 	return error.getError();
 }
 
-Regular RegularGenerator::getRegular(){
+RuleFileProductionRegularExpression RegularExpressionGenerator::getProductionRegularExpression(){
 	return defintnionOptimized;
-}
-
-
-
-
-void RegularGenerator::debugInfo(){
-
-	for(RegularExpressionTokens* tok : defintnion.getDefinition()){
-		if(tok->getType() == "Sym"){
-			cout << ((RegularSymbols*)tok)->getSymbol() << " ";
-		}else{
-			if(((RegularTransition*)tok)->getAvailableTransitions().size() > 0){
-				cout << (((RegularTransition*)tok)->getAvailableTransitions())[0] << " ";
-			}else{
-				if(((RegularTransition*)tok)->isEpsilonAvailable()){
-					cout << "&epsilon&" << " ";
-				}
-			}
-		}
-	}
-	cout << endl << endl;
-	
-	for(RegularExpressionTokens* tok : defintnionPostFix.getDefinition()){
-		if(tok->getType() == "Sym"){
-			cout << ((RegularSymbols*)tok)->getSymbol() << " ";
-		}else{
-			if(((RegularTransition*)tok)->getAvailableTransitions().size() > 0){
-				cout << (((RegularTransition*)tok)->getAvailableTransitions())[0] << " ";
-			}else{
-				if(((RegularTransition*)tok)->isEpsilonAvailable()){
-					cout << "&epsilon&" << " ";
-				}
-			}
-		}
-	}
-	
-	cout << endl << endl;
-	
-	for(RegularExpressionTokens* tok : defintnionOptimized.getDefinition()){
-		if(tok->getType() == "Sym"){
-			cout << ((RegularSymbols*)tok)->getSymbol() << " ";
-		}else{
-			if(((RegularTransition*)tok)->getAvailableTransitions().size() == 1){
-				cout << (((RegularTransition*)tok)->getAvailableTransitions())[0] << " ";
-			}else if(((RegularTransition*)tok)->getAvailableTransitions().size() > 1){
-				cout << "[ ";
-				for(char x : ((RegularTransition*)tok)->getAvailableTransitions()){
-					cout << x << " ";
-				}
-				cout << "]";
-			}else{
-				if(((RegularTransition*)tok)->isEpsilonAvailable()){
-					cout << "&epsilon&" << " ";
-				}
-			}
-		}
-	}
-
-
-	cout << endl << defintnion.getDefinition().size() << endl << endl;
 }
