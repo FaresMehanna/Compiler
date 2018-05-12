@@ -29,6 +29,21 @@ class RegularExpression{
 	
 	public:
 	
+		// To implement deepCopy
+		RegularExpression(const RegularExpression& lhs);
+		RegularExpression& operator= (const RegularExpression& lhs);
+		
+		// Construct RegularExpression from RuleFileProductionRegularExpression
+		RegularExpression(const RuleFileProductionRegularExpression& lhs);
+		RegularExpression& operator= (const RuleFileProductionRegularExpression& lhs);
+
+		// Construct RegularExpression from RuleFileUserDefinedRegularExpression
+		RegularExpression(const RuleFileUserDefinedRegularExpression& lhs);
+		RegularExpression& operator= (const RuleFileUserDefinedRegularExpression& lhs);
+
+		// To Free the data
+		virtual ~RegularExpression();
+
 		// Add token to then end of the current regular expression.
 		void addToken(RegularExpressionToken* token);
 		
@@ -50,6 +65,9 @@ class RegularExpression{
  */
 class RuleFileUserDefinedRegularExpression : public RegularExpression{
 
+		// Construct RuleFileUserDefinedRegularExpression from RegularExpression
+		RuleFileUserDefinedRegularExpression(const RegularExpression& lhs);
+		RuleFileUserDefinedRegularExpression& operator= (const RegularExpression& lhs);
 };
 
 /*
@@ -76,56 +94,6 @@ class RuleFileProductionRegularExpression : public RegularExpression{
 		// Setter and Getter for the regular priority.
 		unsigned int getPriority();
 		void setPriority(unsigned int priority);
-};
-
-
-class RegularExpressionGenerator{
-	
-	private:
-
-		// Regular Expressions to convert a regular expression to an optimized one.
-		// these objects will store the intermediate representations of the regular expression.
-		RegularExpression defintnion;			// Original Regular expression from the string tokens.
-		RegularExpression defintnionPostFix;	// Same objects as the above but with different order.
-		RegularExpression defintnionOptimized;	// Obtimized version.
-
-		
-		// Is this Regular expression a user defined on to be used for other regular expressions and won't be in production?
-		bool isUserDefinedRegulars;
-
-		// This is hashmap to store the user defined regular to be used in other regular expressions.
-		std::unordered_map<std::string,RuleFileUserDefinedRegularExpression>& userDefinedRegulars;
-
-		// This is refrence of vector of The tokens in the rule line.
-		const std::vector<StringToken*>& lineTokens;
-		
-		// To report an error.
-		ErrorReport error;
-
-		// Three phases to convert a line consisting of some (StringToken)s to post-fix optimized regular
-		//Expression.
-		// Will return true incase of succ and false otherwise.
-		bool firstPhase();		// Convert the Tokens to basic RegularExpression.
-		bool secondPhase();		// Convert the Tokens to postFix order
-		bool thirdPhase();		// Optimize the postFix ordering.
-		
-		// This function will be used to convert the regular expression to post-fix, this function
-		//will return the priority of every operation.
-		int symbolPriority(char);
-
-	public:
-
-		RegularExpressionGenerator(const std::vector<StringToken*>& lineTokens, std::unordered_map<std::string,RuleFileUserDefinedRegularExpression>& definitions, bool isUserDefinedRegulars);
-		
-		// Try to generat the Regular expression from the vector of Tokens.
-		bool generateRegularExpression();
-		
-		// In case succ of "generateRegular", this function will return optimized post-fix regularExpression.
-		RuleFileProductionRegularExpression getProductionRegularExpression();
-		
-		// Functions to report the error to the user.
-		bool isError();
-		std::string getError();
 };
 
 #endif

@@ -60,7 +60,7 @@ class StringTokenizer{
 		//return false.
 		// incase of failure, empty vector will be returned and isError() will
 		//return true and getError() will return the reason.
-		std::vector<StringToken*> tokenize(const std::string& str);
+		std::vector<StringToken> tokenize(const std::string& str);
 
 		// isError() functions to ask if there is an error.
 		// if there was getError() will return the reason.

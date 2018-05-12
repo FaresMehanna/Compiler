@@ -16,43 +16,26 @@
 #include "ExpressionsHandler.h"
 #include "PunctuationHandler.h"
 
-
-
 using namespace std;
 
-bool RulesFileParser::setFile(string fileName){
-	
-	//try to open the file
-	bool succ = ruleFileReader.setFile(fileName));
+RulesFileParser::RulesFileParser() : FileParser(){
 
-	//if failed, set the error message and return false
-	if(!succ){
-		error.setError(ruleFileReader.getError());
-		return false;
-	}
-
-	return true;
 }
 
-string RulesFileParser::getError(){
-	return error.getError();
-}
-
-
-bool RulesFileParser::parseRules(){
+bool RulesFileParser::parse(){
 
 	// This is increasing counter for every rule.
 	// This counter will be used to set priority for each line, priority is bigger
 	//at the top and decrease downward. So priority will be (INT_MAX/counter).
 	int counter = 5;
 
-	while(!ruleFileReader.isEnd()){
+	while(!reader.isEnd()){
 
 		//read next line in the file
-		string line = ruleFileReader.getNextLine();
+		string line = reader.getNextLine();
 
 		//divide the string into several token using hardcoded lexical specifications
-		vector<StringToken*> tokens = tokenizer.tokenize(line);
+		vector<StringToken> tokens = tokenizer.tokenize(line);
 
 		//check error during the tokenizer
 		if(tokenizer.isError()){
@@ -92,11 +75,11 @@ bool RulesFileParser::parseRules(){
 	}
 
 	//All expressions
-	vector<RegularExpression> exps = expHandler.getAllExpressions();
+	vector<RuleFileProductionRegularExpression> exps = expHandler.getAllExpressions();
 	//All keywords as expressions
-	vector<RegularExpression> keyExps = keyHandler.getAllKeywordsExpressions();
+	vector<RuleFileProductionRegularExpression> keyExps = keyHandler.getAllKeywordsExpressions();
 	//All punctuations as expressions 
-	vector<RegularExpression> punctuationExps = punctHandler.getAllPunctuationsExpressions();
+	vector<RuleFileProductionRegularExpression> punctuationExps = punctHandler.getAllPunctuationsExpressions();
 
 	//add them together
 	AllExps.clear();	//clear old data
@@ -108,6 +91,6 @@ bool RulesFileParser::parseRules(){
 
 }
 
-vector<RegularExpression> RulesFileParser::getParsedExpressions(){
+vector<RuleFileProductionRegularExpression> RulesFileParser::getParsedExpressions(){
 	return AllExps;
 }

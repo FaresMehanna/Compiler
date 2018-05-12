@@ -30,7 +30,7 @@ bool StringTokenizer::isError(){
 	return error.isError();
 }
 
-vector<StringToken*> StringTokenizer::tokenize(const std::string& str){
+vector<StringToken> StringTokenizer::tokenize(const std::string& str){
 	
 	// if empty or NULL string, return empty vector.
 	if(str.length() == 0)
@@ -57,7 +57,7 @@ vector<StringToken*> StringTokenizer::tokenize(const std::string& str){
 	string currString = "";
 
 	// vector of tokens to be returned.
-	vector<StringToken*> toReturn;
+	vector<StringToken> toReturn;
 
 	/* 
 	 * Token parsing.
@@ -186,13 +186,13 @@ vector<StringToken*> StringTokenizer::tokenize(const std::string& str){
 				// If it's letters or digits or operators,
 				//add them as one string.
 				if(oldtype == STRING_TOKEN_LETTERS || oldtype == STRING_TOKEN_DIGITS || oldtype == STRING_TOKEN_ESCAPE){
-					StringToken* token = new StringToken(oldtype,currString);
+					StringToken token(oldtype,currString);
 					toReturn.push_back(token);
 
 				// If they are symbols then add them as seperate strings.
 				}else{
 					for(int i=0;i<currString.length();i++){
-						StringToken* token = new StringToken(oldtype,string()+currString[i]);
+						StringToken token(oldtype,string()+currString[i]);
 						toReturn.push_back(token);
 					}
 				}
@@ -211,12 +211,12 @@ vector<StringToken*> StringTokenizer::tokenize(const std::string& str){
 
 				//if it's letters or digits or operators //add them as one string
 				if(oldtype == STRING_TOKEN_LETTERS || oldtype == STRING_TOKEN_DIGITS || oldtype == STRING_TOKEN_ESCAPE){
-					StringToken* token = new StringToken(oldtype,string(currString.begin(),currString.end()-1));
+					StringToken token(oldtype,string(currString.begin(),currString.end()-1));
 					toReturn.push_back(token);
 				//if they are symbols then add them as seperate strings
 				}else{
 					for(int i=0;i<currString.length()-1;i++){
-						StringToken* token = new StringToken(oldtype,string()+currString[i]);
+						StringToken token(oldtype,string()+currString[i]);
 						toReturn.push_back(token);
 					}
 				}
@@ -229,12 +229,12 @@ vector<StringToken*> StringTokenizer::tokenize(const std::string& str){
 	if(currString.length() > 0){
 		//if it's letters or digits or operators //add them as one string
 		if(type == STRING_TOKEN_LETTERS || type == STRING_TOKEN_DIGITS || type == STRING_TOKEN_ESCAPE){
-			StringToken* token = new StringToken(type,string(currString.begin(),currString.end()));
+			StringToken token(type,string(currString.begin(),currString.end()));
 			toReturn.push_back(token);
 		//if they are symbols then add them as seperate strings
 		}else{
 			for(int i=0;i<currString.length();i++){
-				StringToken* token = new StringToken(type,string()+currString[i]);
+				StringToken token(type,string()+currString[i]);
 				toReturn.push_back(token);
 			}
 		}
