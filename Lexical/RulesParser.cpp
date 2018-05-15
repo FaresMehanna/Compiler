@@ -11,6 +11,8 @@
 #include "RulesFileParser.h"
 #include "RegularExpTokens.h"
 
+#include "RuleLine.h"
+
 #include "DefinitionsHandler.h"
 #include "KeywordsHandler.h"
 #include "ExpressionsHandler.h"
@@ -27,19 +29,25 @@ bool RulesFileParser::parse(){
 	// This is increasing counter for every rule.
 	// This counter will be used to set priority for each line, priority is bigger
 	//at the top and decrease downward. So priority will be (INT_MAX/counter).
-	int counter = 5;
+	int counter = 1;
 
 	while(!reader.isEnd()){
 
 		//read next line in the file
 		string line = reader.getNextLine();
 
+		// Current line
+		RuleLine currentLine(line,counter);
+
 		//divide the string into several token using hardcoded lexical specifications
 		vector<StringToken> tokens = tokenizer.tokenize(line);
 
+		// Add the tokens to the line
+		currentLine.setLineToken(tokens);
+
 		//check error during the tokenizer
 		if(tokenizer.isError()){
-			error.setError(tokenizer.getError());
+			error.setError(tokenizer.getError(),counter);
 			return false;
 		}
 
@@ -47,13 +55,13 @@ bool RulesFileParser::parse(){
 		bool succ = true;
 
 		//try to solve the line as definition
-		succ |= defsHandler.setDefinition(tokens,INT_MAX);
+		succ |= defsHandler.setDefinition(currentLine,INT_MAX);
 		//try to solve the line as expression
-		succ |= expHandler.setExpression(tokens,defsHandler.getDefinitionsTools(),INT_MAX/counter);
+		succ |= expHandler.setExpression(currentLine,defsHandler.getDefinitionsTools(),INT_MAX/(counter+4));
 		//try to solve the line as keywords
-		succ |= keyHandler.setKeywords(tokens,INT_MAX/2);
+		succ |= keyHandler.setKeywords(currentLine,INT_MAX/2);
 		//try to solve the line as punctation
-		succ |= punctHandler.setPunctuations(tokens,INT_MAX/3);
+		succ |= punctHandler.setPunctuations(currentLine,INT_MAX/3);
 
 		//if there was an error
 		//set the error message and return false

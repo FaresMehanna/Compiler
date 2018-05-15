@@ -10,6 +10,7 @@ class ErrorReport{
 	public:
 		ErrorReport();
 		void setError(std::string sError);
+		void setError(std::string sError, int lineNumber);
 		bool isError();
 		std::string getError();
 };
